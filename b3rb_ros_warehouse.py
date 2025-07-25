@@ -159,14 +159,14 @@ class WarehouseExplore(Node):
 		self.qr_view_sent = False
 		self.initial_angle_used = False
 		self.current_warehouse = "WH1"
-		self.warehouse_shelves = {
-			"WH1": [(1,-2.893, 2.905, 0.785), (2, 2.824, -2.854, 1.396)],
-			"WH2": [(1, 4.822, -4.818, 0.121), (2, 1.888, -0.922, 0.907), (3, 1.020, 3.773, -0.549), (4, 6.692, 5.999, -0.777)],
-			"WH3": [(1, 1.927, 1.928, 2.330), (2, 3.371, 4.863, -0.733), (3, 2.019, 8.919, -0.025)],
-			"WH4": [(1, -2.344, -1.718, 1.541), (2, 3.908, -5.821, 0.508), (3, -0.030, -4.930, 0.000),
-					(4, 2.956, -1.966, 0.785), (5, 1.951, 3.647, 0.003), (6, 5.045, 3.651, 0.000)],
-		}
-		self.shelf_nav_sent = False  # flag to ensure shelf nav only starts after initial_angle
+		# self.warehouse_shelves = {
+		# 	"WH1": [(1,-2.893, 2.905, 0.785), (2, 2.824, -2.854, 1.396)],
+		# 	"WH2": [(1, 4.822, -4.818, 0.121), (2, 1.888, -0.922, 0.907), (3, 1.020, 3.773, -0.549), (4, 6.692, 5.999, -0.777)],
+		# 	"WH3": [(1, 1.927, 1.928, 2.330), (2, 3.371, 4.863, -0.733), (3, 2.019, 8.919, -0.025)],
+		# 	"WH4": [(1, -2.344, -1.718, 1.541), (2, 3.908, -5.821, 0.508), (3, -0.030, -4.930, 0.000),
+		# 			(4, 2.956, -1.966, 0.785), (5, 1.951, 3.647, 0.003), (6, 5.045, 3.651, 0.000)],
+		# }
+ # flag to ensure shelf nav only starts after initial_angle
 		self.qr_goal_sent = False
 		self.obj_view_sent = False
 		self.timer_retry_initialized = False
@@ -180,9 +180,8 @@ class WarehouseExplore(Node):
 		self.forward_step = 0.3            # each forward step (meters)
 		self.forward_progress = 0.0
 		self.initial_pose = None
-		self.shelf_pose_found = False
+
 		# Example shelf-1 reference for WH1 (tweak per warehouse)
-		self.first_shelf_ref_coords = (2.8, -2.8)
 
 
 
@@ -338,7 +337,7 @@ class WarehouseExplore(Node):
 			quat = tf_transformations.quaternion_from_euler(0, 0, yaw_rad)
 			goal.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
 
-			self.send_goal_from_world_pose(goal)
+
 			self.initial_angle_sent = True
 			self.step_forward_along_angle()  # Start straight movement after initial angle rotation
 			self.get_logger().info(f"🎯 Rotated and stepped forward in initial_angle: {self.initial_angle}°")
@@ -385,7 +384,7 @@ class WarehouseExplore(Node):
 			quat = tf_transformations.quaternion_from_euler(0, 0, yaw)
 			goal.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
 
-			self.send_goal_from_world_pose(goal)
+
 			self.forward_progress += self.forward_step
 
 			self.get_logger().info(f"🚶 Step forward: {self.forward_progress:.2f} m")
@@ -439,7 +438,7 @@ class WarehouseExplore(Node):
 			goal.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
 
 			self.get_logger().info(f"🧭 Sending forward Nav2 goal: x={x_offset:.2f}, y={y_offset:.2f}, yaw={self.initial_angle}°")
-			self.send_goal_from_world_pose(goal)
+
 
 		except Exception as e:
 			self.get_logger().warn(f"⚠️ move_forward_using_nav2 failed: {str(e)}")
@@ -475,7 +474,7 @@ class WarehouseExplore(Node):
 
 		if should_stop:
 			self.get_logger().info("🛑 Shelf reference reached. Stopping forward steps.")
-			self.shelf_pose_found = True  # Lock movement
+
 			self.saved_shelf_pose = self.pose_curr
 			self.get_logger().info(f"📌 Shelf pose saved: x={curr_x:.2f}, y={curr_y:.2f}")
 			# You can call next step here: self.move_to_qr_view() or so
@@ -852,7 +851,7 @@ class WarehouseExplore(Node):
 		new_x = pose.position.x + distance * math.cos(self.current_yaw)
 		new_y = pose.position.y + distance * math.sin(self.current_yaw)
 		yaw = self.current_yaw
-		self.send_goal_from_world_pose(new_x, new_y, yaw)
+
 
 	def cancel_current_goal(self):
 		"""Requests cancellation of the currently active navigation goal."""
@@ -873,7 +872,7 @@ class WarehouseExplore(Node):
 		self.goal_handle_curr = None
 
 		# Only run this loop during first shelf search
-		if not self.shelf_pose_found and self.initial_angle_sent:
+		if not self.initial_angle_sent:
 			self.get_logger().info("🔁 Continuing toward shelf using step_forward_until_shelf()...")
 			self.step_forward_until_shelf()
 
@@ -896,24 +895,12 @@ class WarehouseExplore(Node):
 			self.logger.info(f"📍 Navigating to shelf-1 at (x={x:.2f}, y={y:.2f}, yaw={yaw:.2f})")
 
 			goal = self.create_goal_from_world_coord(x, y, yaw)
-			self.send_goal_from_world_pose(goal)
+
 
 		except Exception as e:
 			self.logger.warn(f"⏳ Shelf nav retry: {e}")
 
 
-	def go_to_first_shelf(self):
-		self.get_logger().info("📦 go_to_first_shelf() called")
-
-		# Fetch shelf 1 info
-		shelf = self.warehouse_shelves[self.current_warehouse][0]  # (shelf_num, x, y, yaw)
-		_, x, y, yaw = shelf
-
-		# Create offset goal facing the shelf
-		goal_pose = self.get_shelf_side_goal(x, y, yaw)
-
-		# Send goal
-		self.send_goal_from_world_pose(goal_pose)
 
 	def send_goal_to_nav2_internal(self, goal_pose):
 		from nav2_msgs.action import NavigateToPose
@@ -941,10 +928,6 @@ class WarehouseExplore(Node):
 		y_offset = y - offset * math.sin(yaw)
 		return x_offset, y_offset, yaw
 
-	def go_to_first_shelf_timer_cb(self):
-		"""Wrapper timer callback to retry go_to_first_shelf()."""
-		self.logger.info("🔁 Retrying go_to_first_shelf()...")
-		self.go_to_first_shelf()
 
 	def get_robot_pose_from_costmap(self):
 		if self.pose_curr is None:
@@ -952,11 +935,6 @@ class WarehouseExplore(Node):
 		return self.pose_curr.pose.pose  # crude but safe fallback
 
 
-	def go_to_first_shelf_once(self):
-		"""Wrapped version to avoid multiple timers."""
-		if not self.shelf_nav_sent:
-			self.shelf_nav_sent = True
-			self.go_to_first_shelf()
 
 
 
