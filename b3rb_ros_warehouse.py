@@ -312,7 +312,7 @@ class WarehouseExplore(Node):
 
 		try:
 			if not self.tf_buffer.can_transform("map", "base_link", rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=1.0)):
-				self.get_logger().warn("⚠️ TF map → base_link not available yet. Waiting...")
+				self.get_logger().warn(" TF map → base_link not available yet. Waiting...")
 				return
 
 			trans = self.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
@@ -340,32 +340,32 @@ class WarehouseExplore(Node):
 
 			self.initial_angle_sent = True
 			self.step_forward_along_angle()  # Start straight movement after initial angle rotation
-			self.get_logger().info(f"🎯 Rotated and stepped forward in initial_angle: {self.initial_angle}°")
+			self.get_logger().info(f" Rotated and stepped forward in initial_angle: {self.initial_angle}°")
 			self.exploration_started = True
 			self.forward_progress = 0.0
 			self.initial_pose = (x, y)
 
 		except Exception as e:
-			self.get_logger().warn(f"⚠️ TF2 lookup failed: {str(e)}")
+			self.get_logger().warn(f" TF2 lookup failed: {str(e)}")
 
 	def exploration_timer_callback(self):
 		if not self.exploration_started:
 			return
 
 		if self.forward_progress >= self.forward_check_distance:
-			self.get_logger().info("🛑 Max forward distance reached.")
+			self.get_logger().info(" Max forward distance reached.")
 			self.exploration_started = False
 			return
 
 		if self.shelf_detected:
-			self.get_logger().info("✅ Shelf detected by camera. Halting forward motion.")
+			self.get_logger().info(" Shelf detected by camera. Halting forward motion.")
 			self.exploration_started = False
 			self.save_current_pose()  # You should implement this
 			return
 
 		try:
 			if not self.tf_buffer.can_transform("map", "base_link", rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=1.0)):
-				self.get_logger().warn("⚠️ TF map → base_link not available for forward step.")
+				self.get_logger().warn(" TF map → base_link not available for forward step.")
 				return
 
 			trans = self.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
@@ -387,10 +387,10 @@ class WarehouseExplore(Node):
 
 			self.forward_progress += self.forward_step
 
-			self.get_logger().info(f"🚶 Step forward: {self.forward_progress:.2f} m")
+			self.get_logger().info(f" Step forward: {self.forward_progress:.2f} m")
 
 		except Exception as e:
-			self.get_logger().warn(f"❌ Exploration TF error: {str(e)}")
+			self.get_logger().warn(f" Exploration TF error: {str(e)}")
 
 
 	def save_current_pose(self):
@@ -398,10 +398,10 @@ class WarehouseExplore(Node):
 			trans = self.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
 			x = trans.transform.translation.x
 			y = trans.transform.translation.y
-			self.get_logger().info(f"💾 Shelf pose saved at x={x:.2f}, y={y:.2f}")
+			self.get_logger().info(f" Shelf pose saved at x={x:.2f}, y={y:.2f}")
 			# You can later generate QR/object view goals from here
 		except Exception as e:
-			self.get_logger().warn(f"❌ Could not save pose: {str(e)}")
+			self.get_logger().warn(f" Could not save pose: {str(e)}")
 
 
 	def move_forward_using_nav2(self, distance=1.5):
@@ -412,7 +412,7 @@ class WarehouseExplore(Node):
 		try:
 			# Wait for TF between map → base_link
 			if not self.tf_buffer.can_transform("map", "base_link", rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=1.0)):
-				self.get_logger().warn("⚠️ TF map → base_link not available. Waiting...")
+				self.get_logger().warn(" TF map → base_link not available. Waiting...")
 				return
 
 			# Get current position from TF
@@ -437,15 +437,15 @@ class WarehouseExplore(Node):
 			quat = tf_transformations.quaternion_from_euler(0, 0, yaw_rad)
 			goal.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
 
-			self.get_logger().info(f"🧭 Sending forward Nav2 goal: x={x_offset:.2f}, y={y_offset:.2f}, yaw={self.initial_angle}°")
+			self.get_logger().info(f" Sending forward Nav2 goal: x={x_offset:.2f}, y={y_offset:.2f}, yaw={self.initial_angle}°")
 
 
 		except Exception as e:
-			self.get_logger().warn(f"⚠️ move_forward_using_nav2 failed: {str(e)}")
+			self.get_logger().warn(f" move_forward_using_nav2 failed: {str(e)}")
 
 	def step_forward_until_shelf(self):
 		if not self.pose_curr:
-			self.get_logger().warn("⚠️ Current pose not available.")
+			self.get_logger().warn(" Current pose not available.")
 			return
 
 		# Set your reference shelf coordinate for stopping logic
@@ -473,10 +473,10 @@ class WarehouseExplore(Node):
 				should_stop = True
 
 		if should_stop:
-			self.get_logger().info("🛑 Shelf reference reached. Stopping forward steps.")
+			self.get_logger().info(" Shelf reference reached. Stopping forward steps.")
 
 			self.saved_shelf_pose = self.pose_curr
-			self.get_logger().info(f"📌 Shelf pose saved: x={curr_x:.2f}, y={curr_y:.2f}")
+			self.get_logger().info(f" Shelf pose saved: x={curr_x:.2f}, y={curr_y:.2f}")
 			# You can call next step here: self.move_to_qr_view() or so
 			return
 
@@ -486,12 +486,12 @@ class WarehouseExplore(Node):
 		next_x = curr_x + step_distance * math.cos(yaw_rad)
 		next_y = curr_y + step_distance * math.sin(yaw_rad)
 
-		self.get_logger().info(f"🚶 Step forward to: ({next_x:.2f}, {next_y:.2f})")
+		self.get_logger().info(f" Step forward to: ({next_x:.2f}, {next_y:.2f})")
 		goal = self.create_goal_from_world_coord(next_x, next_y, yaw_rad)
 		self.send_goal_to_nav2_internal(goal)
 
 	# def move_to_qr_view(self, lateral_offset=0.5, angle_offset_deg=90.0):
-	# 	self.logger.info("📤 Calling move_to_qr_view()...")
+	# 	self.logger.info(" Calling move_to_qr_view()...")
 
 	# 	# Get shelf-1 pose
 	# 	shelf = self.warehouse_shelves[self.current_warehouse][0]
@@ -506,7 +506,7 @@ class WarehouseExplore(Node):
 
 	# 	# Create goal pose
 	# 	goal = self.create_goal_from_world_coord(qr_x, qr_y, yaw_qr)
-	# 	self.logger.info(f"🧭 Sending QR goal to x={qr_x:.2f}, y={qr_y:.2f}, yaw={yaw_qr:.2f}")
+	# 	self.logger.info(f" Sending QR goal to x={qr_x:.2f}, y={qr_y:.2f}, yaw={yaw_qr:.2f}")
 	# 	self.send_goal_from_world_pose(goal)
 
 	# def _get_yaw_from_pose(self, orientation: Quaternion) -> float:
@@ -561,7 +561,7 @@ class WarehouseExplore(Node):
 				fy, fx = closest_frontier
 				goal = self.create_goal_from_map_coord(fx, fy, map_info)
 				self.send_goal_from_world_pose(goal)
-				print("🔁 Sending goal for automatic space exploration.")
+				print(" Sending goal for automatic space exploration.")
 				return
 			else:
 				# Adjust exploration distance thresholds
@@ -571,7 +571,7 @@ class WarehouseExplore(Node):
 			self.full_map_explored_count = 0
 		else:
 			self.full_map_explored_count += 1
-			print(f"🔚 No frontiers found. Count: {self.full_map_explored_count}")
+			print(f" No frontiers found. Count: {self.full_map_explored_count}")
 
 
 			
@@ -740,7 +740,7 @@ class WarehouseExplore(Node):
 
 		# Publish directly to /shelf_data
 		self.publisher_shelf_data.publish(final_msg)
-		print(f"✅ Published: {qr_str} with {len(final_msg.object_name)} objects")
+		print(f" Published: {qr_str} with {len(final_msg.object_name)} objects")
 
 		# Update GUI immediately
 		if PROGRESS_TABLE_GUI:
@@ -864,16 +864,16 @@ class WarehouseExplore(Node):
 		status = future.result().status
 
 		if status == GoalStatus.STATUS_SUCCEEDED:
-			self.logger.info("🎯 Goal completed successfully.")
+			self.logger.info(" Goal completed successfully.")
 		else:
-			self.logger.warn(f"❌ Goal failed with status: {status}")
+			self.logger.warn(f" Goal failed with status: {status}")
 
 		self.goal_completed = True
 		self.goal_handle_curr = None
 
 		# Only run this loop during first shelf search
 		if not self.initial_angle_sent:
-			self.get_logger().info("🔁 Continuing toward shelf using step_forward_until_shelf()...")
+			self.get_logger().info(" Continuing toward shelf using step_forward_until_shelf()...")
 			self.step_forward_until_shelf()
 
 
@@ -888,17 +888,17 @@ class WarehouseExplore(Node):
 
 			# If both are ready: cancel timer, send goal
 			self.shelf_retry_timer.cancel()
-			self.logger.info("✅ AMCL & costmap ready. Sending shelf-1 goal...")
+			self.logger.info(" AMCL & costmap ready. Sending shelf-1 goal...")
 
 			shelf = self.warehouse_shelves[self.current_warehouse][0]
 			_, x, y, yaw = shelf
-			self.logger.info(f"📍 Navigating to shelf-1 at (x={x:.2f}, y={y:.2f}, yaw={yaw:.2f})")
+			self.logger.info(f" Navigating to shelf-1 at (x={x:.2f}, y={y:.2f}, yaw={yaw:.2f})")
 
 			goal = self.create_goal_from_world_coord(x, y, yaw)
 
 
 		except Exception as e:
-			self.logger.warn(f"⏳ Shelf nav retry: {e}")
+			self.logger.warn(f" Shelf nav retry: {e}")
 
 
 
@@ -909,7 +909,7 @@ class WarehouseExplore(Node):
 		nav_goal.pose = goal_pose
 
 		self.logger.info(
-			f"🧭 Sending goal to Nav2: x={goal_pose.pose.position.x:.2f}, y={goal_pose.pose.position.y:.2f}"
+			f"Sending goal to Nav2: x={goal_pose.pose.position.x:.2f}, y={goal_pose.pose.position.y:.2f}"
 		)
 
 		future = self.nav_to_pose_client.send_goal_async(
@@ -965,11 +965,11 @@ class WarehouseExplore(Node):
 	def goal_response_callback(self, future):
 		goal_handle = future.result()
 		if not goal_handle.accepted:
-			self.logger.warn("❌ Goal rejected.")
+			self.logger.warn(" Goal rejected.")
 			self.goal_completed = True
 			self.goal_handle_curr = None
 		else:
-			self.logger.info("✅ Goal accepted.")
+			self.logger.info(" Goal accepted.")
 			self.goal_completed = False
 			self.goal_handle_curr = goal_handle
 
@@ -1000,7 +1000,7 @@ class WarehouseExplore(Node):
 	def send_goal_from_world_pose(self, goal_pose: PoseStamped):
 		if self.goal_handle_curr is not None and not self.goal_completed:
 			self.get_logger().warn("A goal is already active, skipping new goal.")
-			self.get_logger().warn(f"❌ Skipping new goal. goal_completed={self.goal_completed}")
+			self.get_logger().warn(f" Skipping new goal. goal_completed={self.goal_completed}")
 			return False
 
 		if not self.action_client.wait_for_server(timeout_sec=SERVER_WAIT_TIMEOUT_SEC):
@@ -1012,7 +1012,7 @@ class WarehouseExplore(Node):
 		nav_goal.behavior_tree = ""  # default BT
 
 		self.get_logger().info(
-			f"🧭 Sending goal to x={goal_pose.pose.position.x:.2f}, "
+			f" Sending goal to x={goal_pose.pose.position.x:.2f}, "
 			f"y={goal_pose.pose.position.y:.2f}, frame={goal_pose.header.frame_id}"
 		)
 		self.get_logger().info(f"[DEBUG] Goal being sent:\n{nav_goal.pose}")
